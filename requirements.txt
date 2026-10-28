@@ -1,0 +1,5 @@
+# Dependencias que corren DENTRO de Airflow.
+# Sin versión: las fija el archivo de constraints de Airflow (ver Dockerfile).
+apache-airflow-providers-postgres
+requests
+tenacity
