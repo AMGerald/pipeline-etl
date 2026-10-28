@@ -76,7 +76,15 @@ para el grain de cada tabla y las decisiones de diseño.
    presente, reconciliación hecho↔staging, freshness. No hay check de
    duplicados: las PK ya los impiden. Cada check se probó con una corrupción
    deliberada (en transacción revertida) y detectó su caso.
-6. Tests con pytest (unitarios, mocks de API, integración con testcontainers)
-   y CI en GitHub Actions con ruff.
+6. Tests y CI — HECHO: `make lint | test-unit | test` (usa `.venv`, ver
+   `requirements-dev.txt`). `tests/unit/` (21: reintentos/backoff con la API
+   mockeada, parser y ejecutor de checks, `apply_schema`) y `tests/integration/`
+   (27: Postgres 16 efímero con testcontainers + DDL real; pivote, idempotencia,
+   borde del día local, respuesta vieja vs nueva, y cada check detecta su
+   corrupción). Se verificó que los tests fallan al mutar el código. CI en
+   `.github/workflows/ci.yml` (ruff + pytest, Python 3.12 y 3.13); aún no se ha
+   ejecutado en GitHub. El DAG no se prueba en pytest (requeriría Airflow en el
+   host): se valida corriéndolo en el stack. `tenacity` fijado a la versión de
+   la imagen (9.1.4): no usar `multiplier` en `wait_exponential_jitter`.
 7. Observabilidad (callback de alertas, `audit.pipeline_runs`) y README final.
 8. Opcional: versión GCS + BigQuery.

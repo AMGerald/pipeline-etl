@@ -73,7 +73,7 @@ def run_checks(
                         severity=severity,
                         description=description,
                         violations=len(rows),
-                        sample=[dict(zip(columns, r)) for r in rows[:SAMPLE_ROWS]],
+                        sample=[dict(zip(columns, r, strict=True)) for r in rows[:SAMPLE_ROWS]],
                     )
                 )
     finally:
@@ -84,8 +84,15 @@ def run_checks(
             log.info("OK   %s", r.name)
         else:
             level = logging.ERROR if r.severity == "error" else logging.WARNING
-            log.log(level, "FAIL %s [%s] %s: %s filas. Muestra: %s",
-                    r.name, r.severity, r.description, r.violations, r.sample)
+            log.log(
+                level,
+                "FAIL %s [%s] %s: %s filas. Muestra: %s",
+                r.name,
+                r.severity,
+                r.description,
+                r.violations,
+                r.sample,
+            )
 
     failed = [r.name for r in results if r.failed and r.severity == "error"]
     if failed:

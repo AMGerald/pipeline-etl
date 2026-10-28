@@ -6,7 +6,7 @@ Comprueba que:
   3. El paquete `weather` (src/) es importable desde las tareas.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from airflow.sdk import dag, task
 
@@ -15,7 +15,7 @@ EXPECTED_SCHEMAS = ["audit", "core", "raw", "staging"]
 
 @dag(
     schedule=None,  # solo se ejecuta manualmente
-    start_date=datetime(2026, 1, 1, tzinfo=timezone.utc),
+    start_date=datetime(2026, 1, 1, tzinfo=UTC),
     catchup=False,
     tags=["infra"],
 )

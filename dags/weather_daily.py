@@ -5,7 +5,7 @@ Open-Meteo reemplaza datos provisionales por definitivos unos días después.
 La lógica vive en src/weather; aquí solo se orquesta.
 """
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 
 from airflow.sdk import dag, get_current_context, task
 
@@ -20,7 +20,7 @@ def _lag_days() -> int:
 
 @dag(
     schedule="@daily",
-    start_date=datetime(2026, 10, 1, tzinfo=timezone.utc),
+    start_date=datetime(2026, 10, 1, tzinfo=UTC),
     catchup=False,
     max_active_runs=1,  # evita que dos runs escriban a la vez ventanas solapadas
     default_args={"retries": 2, "retry_delay": timedelta(minutes=2)},
@@ -39,11 +39,7 @@ def weather_daily():
     def target_day() -> str:
         """Día a procesar. En runs manuales data_interval_start puede venir vacío."""
         ctx = get_current_context()
-        base = (
-            ctx.get("data_interval_start")
-            or ctx.get("logical_date")
-            or ctx["dag_run"].run_after
-        )
+        base = ctx.get("data_interval_start") or ctx.get("logical_date") or ctx["dag_run"].run_after
         return (base.date() - timedelta(days=_lag_days())).isoformat()
 
     @task

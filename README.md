@@ -24,3 +24,11 @@ Ejecuta el DAG `smoke_test` desde la UI para validar el entorno.
 | `src/weather/` | Lógica: extract, transform, load, checks |
 | `sql/init/` | DDL que se ejecuta al crear el warehouse |
 | `tests/` | Tests con pytest |
+
+## Tests y calidad de código
+```bash
+python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+make lint        # ruff check + ruff format --check
+make test-unit   # sin Docker ni red
+make test        # + integración (levanta un Postgres efímero; requiere Docker)
+```

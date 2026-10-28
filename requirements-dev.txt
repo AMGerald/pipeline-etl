@@ -1,3 +1,8 @@
-# Herramientas de desarrollo que corren en tu máquina (no en Airflow)
+# Herramientas de desarrollo que corren en tu máquina y en CI (no en Airflow)
 ruff==0.13.0
 pytest==8.4.2
+testcontainers[postgres]==4.15.0
+# Dependencias del código bajo prueba (en Airflow las aporta la imagen)
+psycopg2-binary==2.9.13
+requests==2.34.2
+tenacity==9.1.4  # misma versión que la imagen de Airflow (constraints)

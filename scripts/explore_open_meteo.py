@@ -34,7 +34,10 @@ def summarize(data: dict) -> None:
 
     print("\n2) Coordenadas pedidas vs devueltas:")
     print(f"   pedidas  : {LATITUDE}, {LONGITUDE}")
-    print(f"   devueltas: {data['latitude']}, {data['longitude']}  (elevación {data.get('elevation')} m)")
+    print(
+        f"   devueltas: {data['latitude']}, {data['longitude']}"
+        f"  (elevación {data.get('elevation')} m)"
+    )
     print(f"   timezone : {data['timezone']}  offset: {data['utc_offset_seconds']} s")
 
     print("\n3) Unidades:", json.dumps(data["hourly_units"], ensure_ascii=False))
@@ -61,9 +64,15 @@ def summarize(data: dict) -> None:
 def show_error_format() -> None:
     print("\n7) Formato de un error (start_date > end_date):")
     try:
-        fetch({"latitude": LATITUDE, "longitude": LONGITUDE,
-               "start_date": "2026-01-10", "end_date": "2026-01-01",
-               "hourly": "temperature_2m"})
+        fetch(
+            {
+                "latitude": LATITUDE,
+                "longitude": LONGITUDE,
+                "start_date": "2026-01-10",
+                "end_date": "2026-01-01",
+                "hourly": "temperature_2m",
+            }
+        )
     except urllib.error.HTTPError as e:
         print(f"   HTTP {e.code}: {e.read().decode()}")
 

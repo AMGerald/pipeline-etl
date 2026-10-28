@@ -222,3 +222,61 @@ hace que re-ejecutar tras corregir sea seguro.
 06 compara contra `now()`, no contra la fecha del run: mide la salud del
 pipeline. En un backfill histórico no se activa porque mira el último día
 cargado por ciudad, no el recién procesado.
+
+## Etapa 6: tests y CI
+
+### Pirámide de tests
+Muchos **unitarios** rápidos y aislados (lógica pura, API mockeada), menos
+**de integración** (componentes reales), pocos end-to-end. Aquí: 21 unitarios
+(0.1 s) y 27 de integración (~4 s). Lo que solo existe en SQL (pivote,
+agregación por día local, upsert) **no se puede probar con mocks**: un mock de
+la base solo comprueba que llamaste a la base, no que el SQL sea correcto.
+
+### testcontainers
+Levanta un contenedor Docker real (Postgres 16) durante la sesión de tests y lo
+destruye al terminar: la misma versión de motor que producción, sin instalar
+nada ni compartir estado con tu warehouse. Se aplica el DDL y los seeds reales
+de `sql/`, así los tests también validan el DDL. Un fixture de sesión crea el
+contenedor una vez (caro) y uno por test limpia las tablas (barato).
+
+### Aislar el código del orquestador (seam)
+`src/weather` recibe un `hook` con una interfaz mínima (`get_conn`,
+`get_records`). En los tests se inyecta un `PgHook` de unas 20 líneas sobre
+psycopg2, sin instalar Airflow. Diseñar la lógica de negocio sin depender del
+framework es lo que hizo esto posible.
+
+### Mockear en el límite correcto
+Se reemplaza `requests.get` (el borde con el mundo exterior), no `fetch_archive`.
+Así se ejercitan de verdad los reintentos de tenacity. Para no esperar el
+backoff se sustituye la estrategia de espera: `fetch_archive.retry.wait =
+wait_none()`. Los tests de tiempo no deben dormir.
+
+### Datos sintéticos con valores predecibles
+`temperatura = horas desde el inicio de la ventana` permite afirmar resultados
+exactos: el día local de Lima son los offsets 5..28, así que min=5, max=28,
+media=16.5. Con datos reales aleatorios no podrías verificar el borde del día.
+
+### Probar los tests: mutación
+Un test que nunca falla no protege nada. Se rompió el código a propósito (quitar
+el guard de respuestas viejas, usar UTC en vez de la zona local, contar filas en
+vez de temperaturas) y cada mutación fue detectada por el test esperado. Es la
+idea de los *mutation tests* (mutmut, cosmic-ray) hecha a mano.
+
+### Los tests también se equivocan
+Dos fallos iniciales eran del test: una corrupción artificial que disparaba dos
+checks (el segundo hacía bien su trabajo) y un caso mal planteado. Se arreglan
+modelando el escenario real (horas faltantes en staging + recálculo del hecho),
+no relajando la aserción.
+
+### Alinear el entorno de pruebas con producción
+`tenacity` fijado a 9.1.4 (la de la imagen): la 9.2 deprecó `initial` y habría
+empujado a usar `multiplier`, que la imagen no soporta. Se probó también en
+Python 3.13, la versión de la imagen. Los pins en `requirements-dev.txt` evitan
+que el CI cambie de comportamiento solo.
+
+### CI: ruff + pytest en GitHub Actions
+`ruff check` (lint: errores, imports, upgrades de sintaxis, bugbear) y `ruff
+format --check` (estilo) son rápidos y fallan antes que los tests. `matrix` con
+dos versiones de Python, `concurrency` cancela runs obsoletos de la misma rama y
+`cache: pip` acelera la instalación. Los runners de `ubuntu-latest` traen Docker,
+por eso testcontainers funciona sin configuración extra.

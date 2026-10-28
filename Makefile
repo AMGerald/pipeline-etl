@@ -1,5 +1,7 @@
 # Atajos para el día a día. En Windows, úsalos desde WSL2.
-.PHONY: init build up down reset logs ps psql ddl explore
+.PHONY: init build up down reset logs ps psql ddl explore lint test test-unit
+
+PY ?= .venv/bin/python
 
 init:  ## Crea .env con secretos generados (solo si no existe)
 	@test -f .env && echo ".env ya existe, no lo toco" || ( \
@@ -36,3 +38,13 @@ ddl:  ## Crea/actualiza tablas y carga seeds en el warehouse (idempotente)
 
 explore:  ## Explora la API de Open-Meteo
 	python3 scripts/explore_open_meteo.py
+
+lint:  ## Ruff: estilo y errores (requiere .venv con requirements-dev.txt)
+	$(PY) -m ruff check .
+	$(PY) -m ruff format --check .
+
+test-unit:  ## Tests unitarios (sin Docker ni red)
+	$(PY) -m pytest -m "not integration"
+
+test:  ## Todos los tests; los de integración levantan un Postgres con testcontainers
+	$(PY) -m pytest

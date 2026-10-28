@@ -70,9 +70,7 @@ def extraction_window(utc_day: date) -> tuple[date, date]:
 
 
 @retry(
-    retry=retry_if_exception_type(
-        (RetryableAPIError, requests.Timeout, requests.ConnectionError)
-    ),
+    retry=retry_if_exception_type((RetryableAPIError, requests.Timeout, requests.ConnectionError)),
     stop=stop_after_attempt(MAX_ATTEMPTS),
     wait=wait_exponential_jitter(initial=2, max=60),
     before_sleep=before_sleep_log(log, logging.WARNING),
@@ -143,9 +141,7 @@ def save_raw(
         conn.close()
 
 
-def extract_location(
-    hook, location: Location, utc_day: date, dag_run_id: str | None = None
-) -> int:
+def extract_location(hook, location: Location, utc_day: date, dag_run_id: str | None = None) -> int:
     """Extrae la ventana de una ciudad y la guarda en raw. Devuelve response_id."""
     start, end = extraction_window(utc_day)
     url, status, payload = fetch_archive(location, start, end)
