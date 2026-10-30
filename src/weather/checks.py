@@ -48,13 +48,13 @@ def _parse(path: Path) -> tuple[str, str, str]:
     return severity, meta["description"].strip(), sql
 
 
-def run_checks(
+def evaluate_checks(
     hook, local_date: date, lag_days: int, checks_dir: Path = CHECKS_DIR
 ) -> list[CheckResult]:
-    """Ejecuta todos los checks para un día local y devuelve los resultados.
+    """Ejecuta todos los checks de un día local y devuelve los resultados, sin lanzar.
 
-    Lanza DataQualityError si algún check `error` falla (después de correr todos,
-    para reportar el panorama completo y no solo el primer problema).
+    Separado de `raise_if_failed` para poder guardar los resultados (auditoría)
+    antes de que un check `error` haga fallar el run.
     """
     params = {"local_date": local_date, "lag_days": lag_days}
     results: list[CheckResult] = []
@@ -94,7 +94,21 @@ def run_checks(
                 r.sample,
             )
 
+    return results
+
+
+def raise_if_failed(results: list[CheckResult], local_date: date) -> None:
+    """Lanza DataQualityError si algún check `error` tiene violaciones."""
     failed = [r.name for r in results if r.failed and r.severity == "error"]
     if failed:
         raise DataQualityError(f"Checks con error para {local_date}: {', '.join(failed)}")
+
+
+def run_checks(
+    hook, local_date: date, lag_days: int, checks_dir: Path = CHECKS_DIR
+) -> list[CheckResult]:
+    """Evalúa todos los checks (para reportar el panorama completo, no solo el primer
+    problema) y lanza DataQualityError si algún `error` falla."""
+    results = evaluate_checks(hook, local_date, lag_days, checks_dir)
+    raise_if_failed(results, local_date)
     return results

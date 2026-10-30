@@ -7,6 +7,8 @@ Sin dependencia de Airflow: el hook se recibe por parámetro.
 import logging
 from datetime import date
 
+from weather.db import execute
+
 log = logging.getLogger(__name__)
 
 # Pivota los arrays paralelos del JSON a filas: la posición (ordinality) en cada
@@ -90,26 +92,15 @@ ON CONFLICT (location_key, date_key) DO UPDATE SET
 """
 
 
-def _execute(hook, sql: str, params: dict) -> int:
-    """Ejecuta una sentencia en su propia transacción y devuelve las filas afectadas."""
-    conn = hook.get_conn()
-    try:
-        with conn, conn.cursor() as cur:  # `with conn` = commit/rollback
-            cur.execute(sql, params)
-            return cur.rowcount
-    finally:
-        conn.close()
-
-
 def load_staging(hook, response_id: int) -> int:
     """raw -> staging para una respuesta. Devuelve filas insertadas/actualizadas."""
-    rows = _execute(hook, _LOAD_STAGING_SQL, {"response_id": response_id})
+    rows = execute(hook, _LOAD_STAGING_SQL, {"response_id": response_id})
     log.info("staging.weather_hourly: %s filas desde response_id=%s", rows, response_id)
     return rows
 
 
 def build_fact_daily(hook, local_date: date) -> int:
     """staging -> core para un día local, todas las ciudades activas."""
-    rows = _execute(hook, _BUILD_FACT_SQL, {"local_date": local_date})
+    rows = execute(hook, _BUILD_FACT_SQL, {"local_date": local_date})
     log.info("core.fact_weather_daily: %s filas para %s", rows, local_date)
     return rows

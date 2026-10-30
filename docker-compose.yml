@@ -24,6 +24,8 @@ x-airflow-common: &airflow-common
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
     # Nuestro código de negocio (src/weather) importable desde los DAGs
     PYTHONPATH: /opt/airflow/src
+    # Webhook de alertas (Slack/Discord/...). Vacío = las alertas solo van al log
+    ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
     # Connection al warehouse definida por variable de entorno (id: warehouse_db)
     AIRFLOW_CONN_WAREHOUSE_DB: >-
       {"conn_type": "postgres", "host": "warehouse-db", "port": 5432,

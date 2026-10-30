@@ -119,4 +119,16 @@ def test_corre_todos_los_checks_antes_de_fallar(tmp_path):
     with pytest.raises(DataQualityError) as exc:
         run(tmp_path)
 
-    assert "a" in str(exc.value) and "b" in str(exc.value)  # reporta el panorama completo
+    assert str(exc.value).endswith(": a, b")  # reporta el panorama completo
+
+
+def test_evaluate_checks_no_lanza_pero_raise_if_failed_si(tmp_path):
+    from weather.checks import evaluate_checks, raise_if_failed
+
+    write_checks(tmp_path, a=FAILING.format(sev="error"))
+
+    results = evaluate_checks(FakeHook(), date(2026, 10, 20), 5, checks_dir=tmp_path)  # no lanza
+
+    assert results[0].failed
+    with pytest.raises(DataQualityError, match=": a$"):
+        raise_if_failed(results, date(2026, 10, 20))

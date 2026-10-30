@@ -18,6 +18,8 @@ Variables horarias: `temperature_2m`, `relative_humidity_2m`, `precipitation`,
 | core | `core.dim_location` | Una ciudad | `location_key` (natural: `location_code`) |
 | core | `core.dim_date` | Un día calendario | `date_key` (YYYYMMDD) |
 | core | `core.fact_weather_daily` | Una ciudad × un día local | `(location_key, date_key)` |
+| audit | `audit.pipeline_runs` | Un run del DAG | `run_id` |
+| audit | `audit.check_results` | Un check en un run | `(run_id, check_name)` |
 
 ```mermaid
 erDiagram
